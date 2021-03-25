@@ -6,6 +6,7 @@
 // ===================================================
 // [Version]
 // 1.0.0 初版
+// 1.1.0 大規模なリファクタリングを実施
 // =============================================================
 /*:ja
  * @target MZ
@@ -35,6 +36,9 @@
 
 (() => {
 
+    //-----------------------------------------------------------------------------
+    // BattleManager
+    //
     const _BattleManager_initMembers = BattleManager.initMembers;
     BattleManager.initMembers = function() {
         _BattleManager_initMembers.call(this);
@@ -67,283 +71,101 @@
          this._isTypeReversing = false;
     };
 
+    //-----------------------------------------------------------------------------
+    // Scene_Battle
+    //
     const _Scene_Battle_initialize = Scene_Battle.prototype.initialize;
     Scene_Battle.prototype.initialize = function() {
         _Scene_Battle_initialize.call(this);
         this._isTypeReversing = false;      
     };
 
-    const _Game_Actor_setup = Game_Actor.prototype.setup;
-    Game_Actor.prototype.setup = function(actorId) {
-        _Game_Actor_setup.call(this, actorId);
-        this._asEnemy = false;
-        this._enemyId = 0;
-        this._letter = "";
-        this._plural = false;
+    Game_Battler.prototype.asEnemy = function() {
+        return this._asEnemy || false;
     };
 
-    Game_Actor.prototype.isAutoBattle = function() {
-        if (this.asEnemy()) {
-            return true;
-        } else {
-            return Game_BattlerBase.prototype.isAutoBattle.call(this);
-        }
-    };
-
-
-    Game_Actor.prototype.asEnemy = function() {
-        return this._asEnemy;
-    };
-
-    const _Game_Actor_friendsUnit = Game_Actor.prototype.friendsUnit;
-    Game_Actor.prototype.friendsUnit = function() {
-        if (this.asEnemy()) {
-            return $gameTroop;
-        } else {
-            return _Game_Actor_friendsUnit.call(this);
-        }
-    };
-
-    const _Game_Actor_isActor = Game_Actor.prototype.isActor;
-    Game_Actor.prototype.isActor = function() {
-        if (BattleManager._isTypeReversing) {
-            return !this.asEnemy();
-        } else {
-            return _Game_Actor_isActor.call(this);
-        }
-    };
-
-    const _Game_Actor_opponentsUnit = Game_Actor.prototype.opponentsUnit;
-    Game_Actor.prototype.opponentsUnit = function() {
-        if (this.asEnemy()) {
-            return $gameParty;
-        } else {
-            return _Game_Actor_opponentsUnit.call(this);
-        }
-    };
-
-    const _Game_Actor_index = Game_Actor.prototype.index;
-    Game_Actor.prototype.index = function() {
-        if (this.asEnemy()) {
-            return $gameTroop.members().indexOf(this);
-        } else {
-            return _Game_Actor_index.call(this);
-        }
-    };
-
-    const _Game_Actor_isBattleMember = Game_Actor.prototype.isBattleMember;
-    Game_Actor.prototype.isBattleMember = function() {
-        if (this.asEnemy()) {
-            return true;
-        } else {
-            return _Game_Actor_isBattleMember.call(this);
-        }
-    };
-
-    const _Game_Actor_paramBase = Game_Actor.prototype.paramBase;
-    Game_Actor.prototype.paramBase = function(paramId) {
-        if (this.asEnemy()) {
-            return this.enemy().params[paramId];
-        } else {
-            return _Game_Actor_paramBase.call(this, paramId);
-        }
-    };
-
-    const _Game_Actor_traitObjects = Game_Actor.prototype.traitObjects;
-    Game_Actor.prototype.traitObjects = function() {
-        const traitObjects = _Game_Actor_traitObjects.call(this)
-        if (this.asEnemy()) {
-            return traitObjects.concat(this.enemy());
-        } else {
-            return traitObjects;
-        }
-    };
-
-//=========================== Substitution [Start] ===========================
-    Game_Actor.prototype.selectAction = function(actionList, ratingZero) {
-        const sum = actionList.reduce((r, a) => r + a.rating - ratingZero, 0);
-        if (sum > 0) {
-            let value = Math.randomInt(sum);
-            for (const action of actionList) {
-                value -= action.rating - ratingZero;
-                if (value < 0) {
-                    return action;
-                }
-            }
-        } else {
-            return null;
-        }
-    };
-
-    Game_Actor.prototype.selectAllActions = function(actionList) {
-        const ratingMax = Math.max(...actionList.map(a => a.rating));
-        const ratingZero = ratingMax - 3;
-        actionList = actionList.filter(a => a.rating > ratingZero);
-        for (let i = 0; i < this.numActions(); i++) {
-            this.action(i).setEnemyAction(
-                this.selectAction(actionList, ratingZero)
-            );
-        }
-    };
-
-    const _Game_Actor_makeActions = Game_Actor.prototype.makeActions;
-    Game_Actor.prototype.makeActions = function() {
-        if (!this.asEnemy()) {
-            _Game_Actor_makeActions.call(this);
-            return;
-        }
-       Game_Battler.prototype.makeActions.call(this);
-       if (this.numActions() > 0) {
-           const actionList = this.enemy().actions.filter(a =>
-               this.isActionValid(a)
-           );
-           if (actionList.length > 0) {
-               this.selectAllActions(actionList);
-           }
-       }
-       this.setActionState("waiting");
-    };
-
-    Game_Actor.prototype.isActionValid = function(action) {
-        return (
-            this.meetsCondition(action) && this.canUse($dataSkills[action.skillId])
+    const _Game_Enemy_battlerName = Game_Enemy.prototype.battlerName;
+    Game_Enemy.prototype.battlerName = function() {
+        return(
+            this.asEnemy() ?
+            this._battlerName :
+            _Game_Enemy_battlerName.call(this)
         );
     };
 
-    Game_Actor.prototype.meetsCondition = function(action) {
-        const param1 = action.conditionParam1;
-        const param2 = action.conditionParam2;
-        switch (action.conditionType) {
-            case 1:
-                return this.meetsTurnCondition(param1, param2);
-            case 2:
-                return this.meetsHpCondition(param1, param2);
-            case 3:
-                return this.meetsMpCondition(param1, param2);
-            case 4:
-                return this.meetsStateCondition(param1);
-            case 5:
-                return this.meetsPartyLevelCondition(param1);
-            case 6:
-                return this.meetsSwitchCondition(param1);
-            default:
-                return true;
-        }
-    };
-
-    Game_Actor.prototype.meetsTurnCondition = function(param1, param2) {
-        const n = this.turnCount();
-        if (param2 === 0) {
-            return n === param1;
-        } else {
-            return n > 0 && n >= param1 && n % param2 === param1 % param2;
-        }
-    };
-
-    Game_Actor.prototype.meetsHpCondition = function(param1, param2) {
-        return this.hpRate() >= param1 && this.hpRate() <= param2;
-    };
-
-    Game_Actor.prototype.meetsMpCondition = function(param1, param2) {
-        return this.mpRate() >= param1 && this.mpRate() <= param2;
-    };
-
-    Game_Actor.prototype.meetsStateCondition = function(param) {
-        return this.isStateAffected(param);
-    };
-
-    Game_Actor.prototype.meetsPartyLevelCondition = function(param) {
-        return $gameParty.highestLevel() >= param;
-    };
-
-    Game_Actor.prototype.meetsSwitchCondition = function(param) {
-        return $gameSwitches.value(param);
-    };
-
-    Game_Actor.prototype.enemy = function() {
-        return $dataEnemies[this._enemyId];
-    };
-
-    Game_Actor.prototype.exp = function() {
-        return this.enemy().exp;
-    };
-
-    Game_Actor.prototype.gold = function() {
-        return this.enemy().gold;
-    };
-
-    Game_Actor.prototype.makeDropItems = function() {
-        const rate = this.dropItemRate();
-        return this.enemy().dropItems.reduce((r, di) => {
-            if (di.kind > 0 && Math.random() * di.denominator < rate) {
-                return r.concat(this.itemObject(di.kind, di.dataId));
-            } else {
-                return r;
-            }
-        }, []);
-    };
-
-    Game_Actor.prototype.dropItemRate = function() {
-        return $gameParty.hasDropItemDouble() ? 2 : 1;
-    };
-
-    Game_Actor.prototype.itemObject = function(kind, dataId) {
-        if (kind === 1) {
-            return $dataItems[dataId];
-        } else if (kind === 2) {
-            return $dataWeapons[dataId];
-        } else if (kind === 3) {
-            return $dataArmors[dataId];
-        } else {
-            return null;
-        }
-    };
-
-    Game_Actor.prototype.originalName = function() {
-        return this.actor().name;
-    };
-
-    Game_Actor.prototype.name = function() {
-        return this.originalName() + (this._plural ? this._letter : "");
-    };
-
-    Game_Actor.prototype.isLetterEmpty = function() {
-        return this._letter === "";
-    };
-
-    Game_Actor.prototype.setLetter = function(letter) {
-        this._letter = letter;
-    };
-
-    Game_Actor.prototype.setPlural = function(plural) {
-        this._plural = plural;
-    };
-//=========================== Substitution [End] ===========================
-
-    Game_Enemy.prototype.asEnemy = function() {
-        return false;
-    };
-
+    //-----------------------------------------------------------------------------
+    // Game_Action
+    //
     const _Game_Action_setSubject = Game_Action.prototype.setSubject;
     Game_Action.prototype.setSubject = function(subject) {
+        BattleManager.typeReversingOn();
         _Game_Action_setSubject.call(this, subject);
-        if (subject.asEnemy()) {
-            this._subjectEnemyIndex = subject.index();
+        BattleManager.typeReversingOff();
+    };
+
+    //-----------------------------------------------------------------------------
+    // Game_Enemy
+    //
+    const _Game_Enemy_performActionStart = Game_Enemy.prototype.performActionStart;
+    Game_Enemy.prototype.performActionStart = function(action) {
+        _Game_Enemy_performActionStart.call(this, action);
+    };
+
+    const _Game_Enemy_performAction = Game_Enemy.prototype.performAction;
+    Game_Enemy.prototype.performAction = function(action) {
+        if (!this.asEnemy) {
+            _Game_Enemy_performAction.call(this, action);
+            return;
+        }
+        Game_Battler.prototype.performAction.call(this, action);
+        if (action.isAttack()) {
+            this.performAttack();
+        } else if (action.isGuard()) {
+            this.requestMotion("guard");
+        } else if (action.isMagicSkill()) {
+            this.requestMotion("spell");
+        } else if (action.isSkill()) {
+            this.requestMotion("skill");
+        } else if (action.isItem()) {
+            this.requestMotion("item");
         }
     };
 
-    const _Game_Action_subject = Game_Action.prototype.subject;
-    Game_Action.prototype.subject = function() {
-        const subjectId = this._subjectActorId;
-        const isValidId = subjectId > 0;
-        if (isValidId && $gameActors.actor(subjectId).asEnemy()) {
-            return $gameTroop.members()[this._subjectEnemyIndex];
+    const _Game_Enemy_performActionEnd = Game_Enemy.prototype.performActionEnd;
+    Game_Enemy.prototype.performActionEnd = function() {
+        if (!this.asEnemy) {
+            _Game_Enemy_performActionEnd.call(this);
+            return;
         }
-        return _Game_Action_subject.call(this);
+
     };
 
-    // overrides
+    const _Game_Enemy_performAttack = Game_Enemy.prototype.performAttack;
+    Game_Enemy.prototype.performAttack = function() {
+        if (!this.asEnemy) {
+            _Game_Enemy_performAttack.call(this);
+            return;
+        }
+        const weapons = this.weapons();
+        const wtypeId = weapons[0] ? weapons[0].wtypeId : 0;
+        const attackMotion = $dataSystem.attackMotions[wtypeId];
+        if (attackMotion) {
+            if (attackMotion.type === 0) {
+                this.requestMotion("thrust");
+            } else if (attackMotion.type === 1) {
+                this.requestMotion("swing");
+            } else if (attackMotion.type === 2) {
+                this.requestMotion("missile");
+            }
+            this.startWeaponAnimation(attackMotion.weaponImageId);
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // Game_Troop
+    //
     Game_Troop.prototype.setup = function(troopId) {
+        // Overridable
         this.clear();
         this._troopId = troopId;
         this._enemies = [];
@@ -359,22 +181,20 @@
         const enemyId = member.enemyId;
         const x = member.x;
         const y = member.y;
-        const enemy = new Game_Enemy(enemyId, x, y);
-        const enm_actorId = enemy.enemy().meta["EAS_actorId"];
+        const _enemy = new Game_Enemy(enemyId, x, y);
+        const enm_actorId = _enemy.enemy().meta["EAS_actorId"];
+        let enemy;
         if (enm_actorId) {
-            const actor = new Game_Actor(enm_actorId);
-            if (member.hidden) actor.hide();
-            actor.x = enemy.screenX();
-            actor.y = enemy.screenY();
-            actor._asEnemy = true;
-            actor._enemyId = enemyId;
-            $gameActors._data[enm_actorId] = actor;
-            this._enemies.push(actor);
+            enemy = new Game_EnemyImgAct(enm_actorId, enemyId, x, y);
+            if (member.hidden) enemy.hide();
+            enemy._asEnemy = true;
+            this._enemies.push(enemy);
             return;
         } else {
-            if (member.hidden) enemy.hide();
-            this._enemies.push(enemy);
+            enemy = _enemy;
         }
+        if (member.hidden) enemy.hide();
+        this._enemies.push(enemy);
     };
 
     Game_Troop.prototype.requestMotionRefresh = function() {
@@ -384,17 +204,45 @@
         }
     };
 
-    const _Sprite_Actor_initialize = Sprite_Actor.prototype.initialize;
-    Sprite_Actor.prototype.initialize = function(battler) {
-        if (battler && battler.asEnemy()) {
-            Sprite_Battler.prototype.initialize.call(this, battler);
-            battler._actionState = "undecided";
-            this.scale = new PIXI.Point(-1,1);
-            return;
-        }
-        _Sprite_Actor_initialize.call(this, battler);
-        this._effectDuration = 0;
+    //-----------------------------------------------------------------------------
+    // Game_EnemyImgAct
+    //
+    function Game_EnemyImgAct(actorId, enemyId, x, y) {
+        Game_Actor.prototype.initialize.call(this, actorId);
+        Object.assign(this, Game_Enemy.prototype);
+        Game_Enemy.prototype.initialize.call(this, enemyId, x, y);
+        this.initializeEx();
+    }
+
+    Game_EnemyImgAct.prototype = Object.create(Game_Actor.prototype);
+    Game_EnemyImgAct.prototype.constructor = Game_EnemyImgAct;
+
+    Game_EnemyImgAct.prototype.initializeEx = function() {
+        this.x = this.screenX();
+        this.y = this.screenY();
     };
+
+    Game_EnemyImgAct.prototype.canInput = function() {
+        return false;
+    };
+
+    Game_EnemyImgAct.prototype.isActor = function() {
+        return !BattleManager._isTypeReversing;
+    };
+
+    //-----------------------------------------------------------------------------
+    // Sprite_EnemyImgAct
+    //
+    function Sprite_EnemyImgAct(battler) {
+        Sprite_Enemy.prototype.initialize.call(this, battler);
+        Object.assign(this, Sprite_Actor.prototype);
+        Sprite_Battler.prototype.initialize.call(this, battler);
+        battler._actionState = "undecided";
+        this.scale = new PIXI.Point(-1,1);
+    }
+
+    Sprite_EnemyImgAct.prototype = Object.create(Sprite_Enemy.prototype);
+    Sprite_EnemyImgAct.prototype.constructor = Sprite_EnemyImgAct;
 
     const _Sprite_Actor_setActorHome = Sprite_Actor.prototype.setActorHome;
     Sprite_Actor.prototype.setActorHome = function(index) {
@@ -427,16 +275,11 @@
     const _Sprite_Actor_update = Sprite_Actor.prototype.update;
     Sprite_Actor.prototype.update = function() {
         _Sprite_Actor_update.call(this);
-        this.updateAppear();
-    }
-
-    Sprite_Actor.prototype.updateAppear = function() {
-        if (!this._actor) return;
-        if (!this._actor.isHidden() && this.opacity === 0) {
-            this._actor.appear();
-            this.opacity = 255;
+        const actor = this._actor;
+        if (actor && actor.asEnemy()) {
+            this.updateEffect();
         }
-    };
+    }
 
     const _Sprite_Actor_retreat = Sprite_Actor.prototype.retreat;
     Sprite_Actor.prototype.retreat = function() {
@@ -452,6 +295,9 @@
         return _Sprite_Actor_damageOffsetX.call(this);
     };
 
+    //-----------------------------------------------------------------------------
+    // Sprite_StateOverlay
+    //
     const _Sprite_StateOverlay_setup = Sprite_StateOverlay.prototype.setup;
     Sprite_StateOverlay.prototype.setup = function(battler) {
         _Sprite_StateOverlay_setup.call(this, battler);
@@ -460,13 +306,16 @@
         }
     };
 
-    // overrides
+    //-----------------------------------------------------------------------------
+    // Spriteset_Battle
+    //
     Spriteset_Battle.prototype.createEnemies = function() {
+        // Overridable
         const enemies = $gameTroop.members();
         const sprites = [];
         for (const enemy of enemies) {
             if (enemy.isActor()) {
-                sprites.push(new Sprite_Actor(enemy));
+                sprites.push(new Sprite_EnemyImgAct(enemy));
             } else {
                 sprites.push(new Sprite_Enemy(enemy));
             }
@@ -489,6 +338,9 @@
         Spriteset_Base.prototype.createAnimationSprite.call(this, targets, animation, mirror, delay);
     };
 
+    //-----------------------------------------------------------------------------
+    // Window_BattleLog
+    //
     const _Window_BattleLog_makeHpDamageText = Window_BattleLog.prototype.makeHpDamageText;
     Window_BattleLog.prototype.makeHpDamageText = function(target) {
         BattleManager.typeReversingOn();
