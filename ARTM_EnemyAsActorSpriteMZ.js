@@ -7,6 +7,7 @@
 // [Version]
 // 1.0.0 初版
 // 1.1.0 大規模なリファクタリングを実施
+// 1.1.1 アクタータイプ判定の不備を修正
 // =============================================================
 /*:ja
  * @target MZ
@@ -113,7 +114,7 @@
 
     const _Game_Enemy_performAction = Game_Enemy.prototype.performAction;
     Game_Enemy.prototype.performAction = function(action) {
-        if (!this.asEnemy) {
+        if (!this.asEnemy()) {
             _Game_Enemy_performAction.call(this, action);
             return;
         }
@@ -133,7 +134,7 @@
 
     const _Game_Enemy_performActionEnd = Game_Enemy.prototype.performActionEnd;
     Game_Enemy.prototype.performActionEnd = function() {
-        if (!this.asEnemy) {
+        if (!this.asEnemy()) {
             _Game_Enemy_performActionEnd.call(this);
             return;
         }
@@ -142,7 +143,7 @@
 
     const _Game_Enemy_performAttack = Game_Enemy.prototype.performAttack;
     Game_Enemy.prototype.performAttack = function() {
-        if (!this.asEnemy) {
+        if (!this.asEnemy()) {
             _Game_Enemy_performAttack.call(this);
             return;
         }
