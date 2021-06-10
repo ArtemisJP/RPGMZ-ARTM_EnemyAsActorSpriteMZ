@@ -8,6 +8,7 @@
 // 1.0.0 初版
 // 1.1.0 大規模なリファクタリングを実施
 // 1.1.1 アクタータイプ判定の不備を修正
+// 1.1.2 アクタータイプの敵にステートアイコンが表示されるよう修正
 // =============================================================
 /*:ja
  * @target MZ
@@ -232,19 +233,8 @@
     };
 
     //-----------------------------------------------------------------------------
-    // Sprite_EnemyImgAct
+    // Sprite_Actor
     //
-    function Sprite_EnemyImgAct(battler) {
-        Sprite_Enemy.prototype.initialize.call(this, battler);
-        Object.assign(this, Sprite_Actor.prototype);
-        Sprite_Battler.prototype.initialize.call(this, battler);
-        battler._actionState = "undecided";
-        this.scale = new PIXI.Point(-1,1);
-    }
-
-    Sprite_EnemyImgAct.prototype = Object.create(Sprite_Enemy.prototype);
-    Sprite_EnemyImgAct.prototype.constructor = Sprite_EnemyImgAct;
-
     const _Sprite_Actor_setActorHome = Sprite_Actor.prototype.setActorHome;
     Sprite_Actor.prototype.setActorHome = function(index) {
         const actor = this._actor;
@@ -279,6 +269,7 @@
         const actor = this._actor;
         if (actor && actor.asEnemy()) {
             this.updateEffect();
+            this.updateStateSprite();
         }
     }
 
@@ -297,14 +288,65 @@
     };
 
     //-----------------------------------------------------------------------------
+    // Sprite_EnemyImgAct
+    //
+    function Sprite_EnemyImgAct(battler) {
+        Sprite_Enemy.prototype.initialize.call(this, battler);
+        Object.assign(this, Sprite_Actor.prototype);
+        Sprite_Battler.prototype.initialize.call(this, battler);
+        this.initializeEx(battler);
+    }
+
+    Sprite_EnemyImgAct.prototype = Object.create(Sprite_Enemy.prototype);
+    Sprite_EnemyImgAct.prototype.constructor = Sprite_EnemyImgAct;
+
+    Sprite_EnemyImgAct.prototype.initializeEx = function(battler) {
+        battler._actionState = "undecided";
+        this.scale = new PIXI.Point(-1,1);
+        this.createStateIconSprite(battler);
+    };
+
+    Sprite_EnemyImgAct.prototype.createStateIconSprite = function(battler) {
+        this._stateIconSprite = new Sprite_StateIcon();
+        this._stateIconSprite.setup(battler);
+        this.addChild(this._stateIconSprite);
+    };
+
+    Sprite_EnemyImgAct.prototype.updateStateSprite = function() {
+        if (this._actor.asEnemy()) {
+            const sprite = this._mainSprite;
+            const height = sprite.height;
+            this._stateIconSprite.y = -Math.round((height + 40) * 0.9);
+            if (this._stateIconSprite.y < 20 - this.y) {
+                this._stateIconSprite.y = 20 - this.y;
+            }
+        } else {
+            Sprite_Enemy.prototype.updateStateSprite.call(this);
+        }
+    };
+
+    //-----------------------------------------------------------------------------
+    // Sprite_StateIcon
+    //
+    const _Sprite_StateIcon_setup = Sprite_StateIcon.prototype.setup;
+    Sprite_StateIcon.prototype.setup = function(battler) {
+        _Sprite_StateIcon_setup.call(this, battler);
+        if (battler && battler.isActor() && battler.asEnemy()) {
+            this.scale = new PIXI.Point(-1,1);
+        }
+
+    };
+
+    //-----------------------------------------------------------------------------
     // Sprite_StateOverlay
     //
     const _Sprite_StateOverlay_setup = Sprite_StateOverlay.prototype.setup;
     Sprite_StateOverlay.prototype.setup = function(battler) {
-        _Sprite_StateOverlay_setup.call(this, battler);
-        if (battler.isActor() && battler.asEnemy()) {
+        if (battler && battler.isActor() && battler.asEnemy()) {
+            return;
             this.scale = new PIXI.Point(-1,1);
         }
+        _Sprite_StateOverlay_setup.call(this, battler);
     };
 
     //-----------------------------------------------------------------------------
