@@ -9,6 +9,7 @@
 // 1.1.0 大規模なリファクタリングを実施
 // 1.1.1 アクタータイプ判定の不備を修正
 // 1.1.2 アクタータイプの敵にステートアイコンが表示されるよう修正
+// 1.1.3 アクタータイプの敵視点が正方向に戻されないよう修正
 // =============================================================
 /*:ja
  * @target MZ
@@ -233,6 +234,15 @@
     };
 
     //-----------------------------------------------------------------------------
+    // Sprite
+    //
+    Sprite.prototype.updateDirectionEAS = function() {
+        if (Math.sign(this.scale.x) != -1) {
+            this.scale.x = -1;
+        }
+    }
+
+    //-----------------------------------------------------------------------------
     // Sprite_Actor
     //
     const _Sprite_Actor_setActorHome = Sprite_Actor.prototype.setActorHome;
@@ -270,6 +280,7 @@
         if (actor && actor.asEnemy()) {
             this.updateEffect();
             this.updateStateSprite();
+            this.updateDirectionEAS();
         }
     }
 
@@ -302,8 +313,9 @@
 
     Sprite_EnemyImgAct.prototype.initializeEx = function(battler) {
         battler._actionState = "undecided";
-        this.scale = new PIXI.Point(-1,1);
         this.createStateIconSprite(battler);
+        this.updateDirectionEAS();
+        this._shadowSprite.scale.x = -1;
     };
 
     Sprite_EnemyImgAct.prototype.createStateIconSprite = function(battler) {
@@ -332,7 +344,7 @@
     Sprite_StateIcon.prototype.setup = function(battler) {
         _Sprite_StateIcon_setup.call(this, battler);
         if (battler && battler.isActor() && battler.asEnemy()) {
-            this.scale = new PIXI.Point(-1,1);
+            this.updateDirectionEAS();
         }
 
     };
@@ -343,8 +355,9 @@
     const _Sprite_StateOverlay_setup = Sprite_StateOverlay.prototype.setup;
     Sprite_StateOverlay.prototype.setup = function(battler) {
         if (battler && battler.isActor() && battler.asEnemy()) {
+            // Disable Sprite_StateOverlay
             return;
-            this.scale = new PIXI.Point(-1,1);
+            this.updateDirectionEAS();
         }
         _Sprite_StateOverlay_setup.call(this, battler);
     };
