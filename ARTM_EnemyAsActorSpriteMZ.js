@@ -10,7 +10,8 @@
 // 1.1.1 アクタータイプ判定の不備を修正
 // 1.1.2 アクタータイプの敵にステートアイコンが表示されるよう修正
 // 1.1.3 アクタータイプの敵視点が正方向に戻されないよう修正
-// =============================================================
+// 1.1.4 アクタータイプの敵に戦闘不能アイコンが表示されないよう修正
+// =================================================================
 /*:ja
  * @target MZ
  * @plugindesc アクターを敵として出現させるMZ専用プラグイン
@@ -347,6 +348,14 @@
             this.updateDirectionEAS();
         }
 
+    };
+
+    const _Sprite_StateIcon_shouldDisplay = Sprite_StateIcon.prototype.shouldDisplay;
+    Sprite_StateIcon.prototype.shouldDisplay = function() {
+        BattleManager.typeReversingOn();
+        const ret = _Sprite_StateIcon_shouldDisplay.call(this);
+        BattleManager.typeReversingOff();
+        return ret;
     };
 
     //-----------------------------------------------------------------------------
