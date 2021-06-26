@@ -7,10 +7,8 @@
 // [Version]
 // 1.0.0 初版
 // 1.1.0 大規模なリファクタリングを実施
-// 1.1.1 アクタータイプ判定の不備を修正
-// 1.1.2 アクタータイプの敵にステートアイコンが表示されるよう修正
-// 1.1.3 アクタータイプの敵視点が正方向に戻されないよう修正
-// 1.1.4 アクタータイプの敵に戦闘不能アイコンが表示されないよう修正
+// 1.1.x アクタータイプ判定関連の不具合修正
+// 1.2.0 NRP_DynamicMotionMZ競合対応(影更新)
 // =================================================================
 /*:ja
  * @target MZ
@@ -35,7 +33,15 @@
  *
  * ４．既存のイベントコマンドで作成した敵グループを指定して戦闘を開始します。
  *
+ *---------------------------------------------
+ * NRP_Dynamicシリーズと併用される場合の注意
+ *---------------------------------------------
+ * プラグイン管理画面にて本プラグインを必ずNRP_Dynamicシリーズより
+ * “下”に置いて下さい。
+ *
+ *
  * プラグインコマンドはありません。
+ *
  */
 
 (() => {
@@ -284,6 +290,20 @@
             this.updateDirectionEAS();
         }
     }
+
+    // *Patch for NRP_DynamicMotionMZ
+    const _Sprite_Actor_updateDynamicShadow = Sprite_Actor.prototype.updateDynamicShadow;
+    Sprite_Actor.prototype.updateDynamicShadow = function() {
+        const asEnemy = this._actor && this._actor.asEnemy();
+        const mirror = this._setDynamicMotion._mirror;
+        if (asEnemy) {
+            this._setDynamicMotion._mirror = !mirror;
+        }
+        _Sprite_Actor_updateDynamicShadow.call(this);
+        if (asEnemy) {
+            this._setDynamicMotion._mirror = mirror;
+        }
+    };
 
     const _Sprite_Actor_retreat = Sprite_Actor.prototype.retreat;
     Sprite_Actor.prototype.retreat = function() {
