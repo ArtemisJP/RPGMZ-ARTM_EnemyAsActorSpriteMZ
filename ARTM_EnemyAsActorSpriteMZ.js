@@ -8,7 +8,7 @@
 // 1.0.0 初版
 // 1.1.0 大規模なリファクタリングを実施
 // 1.1.x アクタータイプ判定関連の不具合修正
-// 1.2.0 NRP_DynamicMotionMZ競合対応(影更新)
+// 1.2.0 NRP_DynamicMotionMZ競合対応、リファクタリング実施
 // =================================================================
 /*:ja
  * @target MZ
@@ -45,6 +45,21 @@
  */
 
 (() => {
+
+    //-----------------------------------------------------------------------------
+    // function
+    //
+    function toggleTypeProc(object, method, args, isRet = false) {
+        BattleManager.typeReversingOn();
+        if (!isRet) { 
+            method.call(object, ...args);
+            BattleManager.typeReversingOff();
+        } else {
+            const result = method.call(object, ...args);
+            BattleManager.typeReversingOff();
+            return result;
+        }
+    }
 
     //-----------------------------------------------------------------------------
     // BattleManager
@@ -90,17 +105,11 @@
         this._isTypeReversing = false;      
     };
 
+    //-----------------------------------------------------------------------------
+    // Game_Battler
+    //
     Game_Battler.prototype.asEnemy = function() {
         return this._asEnemy || false;
-    };
-
-    const _Game_Enemy_battlerName = Game_Enemy.prototype.battlerName;
-    Game_Enemy.prototype.battlerName = function() {
-        return(
-            this.asEnemy() ?
-            this._battlerName :
-            _Game_Enemy_battlerName.call(this)
-        );
     };
 
     //-----------------------------------------------------------------------------
@@ -116,6 +125,15 @@
     //-----------------------------------------------------------------------------
     // Game_Enemy
     //
+    const _Game_Enemy_battlerName = Game_Enemy.prototype.battlerName;
+    Game_Enemy.prototype.battlerName = function() {
+        return(
+            this.asEnemy() ?
+            this._battlerName :
+            _Game_Enemy_battlerName.call(this)
+        );
+    };
+
     const _Game_Enemy_performActionStart = Game_Enemy.prototype.performActionStart;
     Game_Enemy.prototype.performActionStart = function(action) {
         _Game_Enemy_performActionStart.call(this, action);
@@ -139,15 +157,6 @@
         } else if (action.isItem()) {
             this.requestMotion("item");
         }
-    };
-
-    const _Game_Enemy_performActionEnd = Game_Enemy.prototype.performActionEnd;
-    Game_Enemy.prototype.performActionEnd = function() {
-        if (!this.asEnemy()) {
-            _Game_Enemy_performActionEnd.call(this);
-            return;
-        }
-
     };
 
     const _Game_Enemy_performAttack = Game_Enemy.prototype.performAttack;
@@ -291,20 +300,6 @@
         }
     }
 
-    // *Patch for NRP_DynamicMotionMZ
-    const _Sprite_Actor_updateDynamicShadow = Sprite_Actor.prototype.updateDynamicShadow;
-    Sprite_Actor.prototype.updateDynamicShadow = function() {
-        const asEnemy = this._actor && this._actor.asEnemy();
-        const mirror = this._setDynamicMotion._mirror;
-        if (asEnemy) {
-            this._setDynamicMotion._mirror = !mirror;
-        }
-        _Sprite_Actor_updateDynamicShadow.call(this);
-        if (asEnemy) {
-            this._setDynamicMotion._mirror = mirror;
-        }
-    };
-
     const _Sprite_Actor_retreat = Sprite_Actor.prototype.retreat;
     Sprite_Actor.prototype.retreat = function() {
         if (this._actor.asEnemy()) return;
@@ -372,10 +367,7 @@
 
     const _Sprite_StateIcon_shouldDisplay = Sprite_StateIcon.prototype.shouldDisplay;
     Sprite_StateIcon.prototype.shouldDisplay = function() {
-        BattleManager.typeReversingOn();
-        const ret = _Sprite_StateIcon_shouldDisplay.call(this);
-        BattleManager.typeReversingOff();
-        return ret;
+        return toggleTypeProc(this, _Sprite_StateIcon_shouldDisplay, arguments, true);
     };
 
     //-----------------------------------------------------------------------------
@@ -428,26 +420,38 @@
     //
     const _Window_BattleLog_makeHpDamageText = Window_BattleLog.prototype.makeHpDamageText;
     Window_BattleLog.prototype.makeHpDamageText = function(target) {
-        BattleManager.typeReversingOn();
-        const result = _Window_BattleLog_makeHpDamageText.call(this, target);
-        BattleManager.typeReversingOff();
-        return result;
+        return toggleTypeProc(this, _Window_BattleLog_makeHpDamageText, arguments, true);
     };
 
     const _Window_BattleLog_makeMpDamageText = Window_BattleLog.prototype.makeMpDamageText;
     Window_BattleLog.prototype.makeMpDamageText = function(target) {
-        BattleManager.typeReversingOn();
-        const result =  _Window_BattleLog_makeMpDamageText.call(this, target);
-        BattleManager.typeReversingOff();
-        return result;
+        return toggleTypeProc(this, _Window_BattleLog_makeMpDamageText, arguments, true);
     };
 
     const _Window_BattleLog_makeTpDamageText = Window_BattleLog.prototype.makeTpDamageText;
     Window_BattleLog.prototype.makeTpDamageText = function(target) {
-        BattleManager.typeReversingOn();
-        const result =  _Window_BattleLog_makeTpDamageText.call(this, target);
-        BattleManager.typeReversingOff();
-        return result;
+        return toggleTypeProc(this, _Window_BattleLog_makeTpDamageText, arguments, true);
+    };
+
+    //-----------------------------------------------------------------------------
+    // *Patch for NRP_DynamicMotionMZ
+    //
+    const _DynamicMotion_initialize = DynamicMotion.prototype.initialize;
+    DynamicMotion.prototype.initialize = function (baseMotion, performer, target, r) {
+        toggleTypeProc(this, _DynamicMotion_initialize, arguments);
+    }
+
+    const _Sprite_Actor_updateDynamicShadow = Sprite_Actor.prototype.updateDynamicShadow;
+    Sprite_Actor.prototype.updateDynamicShadow = function() {
+        const asEnemy = this._actor && this._actor.asEnemy();
+        const mirror = this._setDynamicMotion._mirror;
+        if (asEnemy) {
+            this._setDynamicMotion._mirror = !mirror;
+        }
+        _Sprite_Actor_updateDynamicShadow.call(this);
+        if (asEnemy) {
+            this._setDynamicMotion._mirror = mirror;
+        }
     };
 
 })();
