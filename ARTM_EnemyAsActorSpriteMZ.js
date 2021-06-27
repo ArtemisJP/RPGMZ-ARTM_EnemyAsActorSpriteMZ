@@ -9,6 +9,7 @@
 // 1.1.0 大規模なリファクタリングを実施
 // 1.1.x アクタータイプ判定関連の不具合修正
 // 1.2.0 NRP_DynamicMotionMZ競合対応(パッチ)、リファクタリング実施
+// 1.2.1 TorigoyaMZ_EnemyHpBar競合対応(パッチ)、リファクタリング実施
 // =================================================================
 /*:ja
  * @target MZ
@@ -418,19 +419,9 @@
     //-----------------------------------------------------------------------------
     // Window_BattleLog
     //
-    const _Window_BattleLog_makeHpDamageText = Window_BattleLog.prototype.makeHpDamageText;
-    Window_BattleLog.prototype.makeHpDamageText = function(target) {
-        return toggleTypeProc(this, _Window_BattleLog_makeHpDamageText, arguments, true);
-    };
-
-    const _Window_BattleLog_makeMpDamageText = Window_BattleLog.prototype.makeMpDamageText;
-    Window_BattleLog.prototype.makeMpDamageText = function(target) {
-        return toggleTypeProc(this, _Window_BattleLog_makeMpDamageText, arguments, true);
-    };
-
-    const _Window_BattleLog_makeTpDamageText = Window_BattleLog.prototype.makeTpDamageText;
-    Window_BattleLog.prototype.makeTpDamageText = function(target) {
-        return toggleTypeProc(this, _Window_BattleLog_makeTpDamageText, arguments, true);
+    const _Window_BattleLog_displayActionResults = Window_BattleLog.prototype.displayActionResults;
+    Window_BattleLog.prototype.displayActionResults = function(subject, target) {
+        toggleTypeProc(this, _Window_BattleLog_displayActionResults, arguments);
     };
 
 })();
