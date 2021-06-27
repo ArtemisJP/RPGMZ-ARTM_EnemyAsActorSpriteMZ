@@ -8,7 +8,7 @@
 // 1.0.0 初版
 // 1.1.0 大規模なリファクタリングを実施
 // 1.1.x アクタータイプ判定関連の不具合修正
-// 1.2.0 NRP_DynamicMotionMZ競合対応、リファクタリング実施
+// 1.2.0 NRP_DynamicMotionMZ競合対応(パッチ)、リファクタリング実施
 // =================================================================
 /*:ja
  * @target MZ
@@ -431,27 +431,6 @@
     const _Window_BattleLog_makeTpDamageText = Window_BattleLog.prototype.makeTpDamageText;
     Window_BattleLog.prototype.makeTpDamageText = function(target) {
         return toggleTypeProc(this, _Window_BattleLog_makeTpDamageText, arguments, true);
-    };
-
-    //-----------------------------------------------------------------------------
-    // *Patch for NRP_DynamicMotionMZ
-    //
-    const _DynamicMotion_initialize = DynamicMotion.prototype.initialize;
-    DynamicMotion.prototype.initialize = function (baseMotion, performer, target, r) {
-        toggleTypeProc(this, _DynamicMotion_initialize, arguments);
-    }
-
-    const _Sprite_Actor_updateDynamicShadow = Sprite_Actor.prototype.updateDynamicShadow;
-    Sprite_Actor.prototype.updateDynamicShadow = function() {
-        const asEnemy = this._actor && this._actor.asEnemy();
-        const mirror = this._setDynamicMotion._mirror;
-        if (asEnemy) {
-            this._setDynamicMotion._mirror = !mirror;
-        }
-        _Sprite_Actor_updateDynamicShadow.call(this);
-        if (asEnemy) {
-            this._setDynamicMotion._mirror = mirror;
-        }
     };
 
 })();
