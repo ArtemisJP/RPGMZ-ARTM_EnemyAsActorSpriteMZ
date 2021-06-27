@@ -5,8 +5,8 @@
     - アクター画像で敵を出現させるMZ専用プラグイン本体
   - ARTM_EnemyAsActorSpriteMZ_DAMZPatch.js
     - アクター画像で敵を出現させるMZ専用プラグインの「NRP_DynamicMotionMZ」競合対応(パッチ)
-- 検討中の内容
-  - アクター画像の敵に対して簡易的なHPゲージを表示する・・・実装するか検討中
+  - ARTM_EnemyAsActorSpriteMZ_TMZEHBPatch.js
+    - アクター画像で敵を出現させるMZ専用プラグインの「TorigoyaMZ_EnemyHpBar」競合対応(パッチ)
 
 - 補足事項<BR>
 本プラグインは移植ではありません。<BR>
