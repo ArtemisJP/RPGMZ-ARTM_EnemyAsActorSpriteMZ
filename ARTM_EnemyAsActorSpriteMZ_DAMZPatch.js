@@ -15,14 +15,11 @@
  *
  * @help ARTM_EnemyAsActorSpriteMZ_DAMZPatch
  *
- * 【使い方】
- * 本プラグインを導入するだけです。
+ * NRP_DynamicMotionMZ競合パッチです。
  * 拙作「ARTM_EnemyAsActorSpriteMZ」が既に導入されている必要があります。
- * プラグイン管理画面にて本プラグインを必ずARTM_EnemyAsActorSpriteMZの
- * “下”に置いて下さい。
  *
  *
- * プラグインコマンドはありません。
+ * パラメータ設定、プラグインコマンドはありません。
  *
  */
 
