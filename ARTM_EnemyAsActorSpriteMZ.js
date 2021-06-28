@@ -10,6 +10,7 @@
 // 1.1.x アクタータイプ判定関連の不具合修正
 // 1.2.0 NRP_DynamicMotionMZ競合対応(パッチ)、リファクタリング実施
 // 1.2.1 TorigoyaMZ_EnemyHpBar競合対応(パッチ)、リファクタリング実施
+// 1.2.2 リファクタリング実施
 // =================================================================
 /*:ja
  * @target MZ
@@ -118,9 +119,7 @@
     //
     const _Game_Action_setSubject = Game_Action.prototype.setSubject;
     Game_Action.prototype.setSubject = function(subject) {
-        BattleManager.typeReversingOn();
-        _Game_Action_setSubject.call(this, subject);
-        BattleManager.typeReversingOff();
+        toggleTypeProc(this, _Game_Action_setSubject, arguments);
     };
 
     //-----------------------------------------------------------------------------
