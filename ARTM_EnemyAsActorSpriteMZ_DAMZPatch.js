@@ -10,13 +10,13 @@
 /*:ja
  * @target MZ
  * @plugindesc アクターを敵として出現させるMZ専用プラグイン
- * NRP_DynamicMotionMZ競合パッチ
+ * 砂川赳様作「NRP_DynamicMotionMZ」との併用導入パッチ
  * @author Artemis
  *
  * @help ARTM_EnemyAsActorSpriteMZ_DAMZPatch
  *
- * NRP_DynamicMotionMZ競合パッチです。
- * 拙作「ARTM_EnemyAsActorSpriteMZ」が既に導入されている必要があります。
+ * 「ARTM_EnemyAsActorSpriteMZ」と、
+ * 砂川赳様作「NRP_DynamicMotionMZ」を併用する際のパッチです。
  *
  *
  * パラメータ設定、プラグインコマンドはありません。
