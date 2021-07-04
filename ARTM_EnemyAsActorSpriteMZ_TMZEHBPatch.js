@@ -11,13 +11,13 @@
 /*:ja
  * @target MZ
  * @plugindesc アクターを敵として出現させるMZ専用プラグイン
- * TorigoyaMZ_EnemyHpBar競合パッチ
+ * Ruたん様作「TorigoyaMZ_EnemyHpBar」との併用導入パッチ
  * @author Artemis
  *
  * @help ARTM_EnemyAsActorSpriteMZ_TMZEHBPatch
  *
- * TorigoyaMZ_EnemyHpBar競合パッチです。
- * 拙作「ARTM_EnemyAsActorSpriteMZ」が既に導入されている必要があります。
+ * 「ARTM_EnemyAsActorSpriteMZ」と、
+ *  Ruたん様作「TorigoyaMZ_EnemyHpBar」を併用する際のパッチです。
  *
  *
  * パラメータ設定、プラグインコマンドはありません。
