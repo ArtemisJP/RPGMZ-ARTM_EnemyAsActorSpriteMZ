@@ -1,14 +1,16 @@
 # RPGMZ-ARTM_EnemyAsActorSpriteMZ
-アクター画像で敵を出現させるMZ専用プラグイン
+アクターを敵として出現させるMZ専用プラグイン
 - **プラグインリスト**
   - ARTM_EnemyAsActorSpriteMZ.js
-    - アクター画像で敵を出現させるMZ専用プラグイン本体
+    - アクターを敵として出現させるMZ専用プラグイン本体
   - ARTM_EnemyAsActorSpriteMZ_DAMZPatch.js
-    - アクター画像で敵を出現させるMZ専用プラグインの「NRP_DynamicMotionMZ」競合対応(パッチ)
+    - アクターを敵として出現させるMZ専用プラグインの「砂川赳様作 NRP_DynamicMotionMZ」対応パッチ
   - ARTM_EnemyAsActorSpriteMZ_TMZEHBPatch.js
-    - アクター画像で敵を出現させるMZ専用プラグインの「TorigoyaMZ_EnemyHpBar」競合対応(パッチ)
+    - アクターを敵として出現させるMZ専用プラグインの「Ruたん様作 TorigoyaMZ_EnemyHpBar」対応パッチ
 
 - **補足事項**<BR>
 本プラグインはMZ専用に新規作成したプラグインです。<br>
 反転アクター画像等は必要ありません。<br>
-なお競合率がやや高いプラグインとなっているため、競合パッチを随時更新中です。
+なお基本的には競合しない作りとなっておりますが、アクターとエネミーを判別している他様プラグインでは<br>
+アクタータイプの敵を認識できないためパッチが必要となります。<br>
+上記パッチは随時更新中です。
