@@ -11,6 +11,7 @@
 // 1.2.0 NRP_DynamicMotionMZ競合対応(パッチ)、リファクタリング実施
 // 1.2.1 TorigoyaMZ_EnemyHpBar競合対応(パッチ)、リファクタリング実施
 // 1.2.2 リファクタリング実施
+// 1.2.3 ボス消滅タイプ指定時の動作不備を解消
 // =================================================================
 /*:ja
  * @target MZ
@@ -70,24 +71,6 @@
     BattleManager.initMembers = function() {
         _BattleManager_initMembers.call(this);
         this._isTypeReversing = false;
-    };
-
-    const _BattleManager_updateEventMain = BattleManager.updateEventMain;
-    BattleManager.updateEventMain = function() {
-        $gameTroop.requestMotionRefresh();
-        return _BattleManager_updateEventMain.call(this);
-    };
-
-    const _BattleManager_startTurn = BattleManager.startTurn;
-    BattleManager.startTurn = function() {
-         $gameTroop.requestMotionRefresh();
-        _BattleManager_startTurn.call(this);
-    };
-
-    const _BattleManager_updateTurn = BattleManager.updateTurn;
-    BattleManager.updateTurn = function(timeActive) {
-         $gameTroop.requestMotionRefresh();
-        _BattleManager_updateTurn.call(this, timeActive);
     };
 
     BattleManager.typeReversingOn = function() {
@@ -178,6 +161,15 @@
             }
             this.startWeaponAnimation(attackMotion.weaponImageId);
         }
+    };
+
+    //-----------------------------------------------------------------------------
+    // Game_Party
+    //
+    const _Game_Party_requestMotionRefresh = Game_Party.prototype.requestMotionRefresh;
+    Game_Party.prototype.requestMotionRefresh = function() {
+        _Game_Party_requestMotionRefresh.call(this);
+        $gameTroop.requestMotionRefresh();
     };
 
     //-----------------------------------------------------------------------------
@@ -296,9 +288,30 @@
         if (actor && actor.asEnemy()) {
             this.updateEffect();
             this.updateStateSprite();
+            this.updateCustom();
             this.updateDirectionEAS();
         }
     }
+
+    const _Sprite_Actor_updateFrame = Sprite_Actor.prototype.updateFrame
+    Sprite_Actor.prototype.updateFrame = function() {
+        if (this._actor.asEnemy()) {
+            if (this._effectType === "bossCollapse") {
+                const width = this._mainSprite.width;
+                const height = this._mainSprite.height;
+                if (!this.bitmap) {
+                    this.bitmap = this._mainSprite.bitmap;
+                    this._mainSprite.bitmap = null;
+                    this.saveCollapsePos(width, height);
+                }
+                this.setFrame(0, 0, width, this._effectDuration);
+                Sprite_Enemy.prototype.updateFrame.call(this);
+            } else if (this.bitmap && !this._effectType) {
+                this.resumeCollapsePos();
+            }
+        }
+        _Sprite_Actor_updateFrame.call(this);
+    };
 
     const _Sprite_Actor_retreat = Sprite_Actor.prototype.retreat;
     Sprite_Actor.prototype.retreat = function() {
@@ -342,8 +355,7 @@
 
     Sprite_EnemyImgAct.prototype.updateStateSprite = function() {
         if (this._actor.asEnemy()) {
-            const sprite = this._mainSprite;
-            const height = sprite.height;
+            const height = this.height;
             this._stateIconSprite.y = -Math.round((height + 40) * 0.9);
             if (this._stateIconSprite.y < 20 - this.y) {
                 this._stateIconSprite.y = 20 - this.y;
@@ -351,6 +363,29 @@
         } else {
             Sprite_Enemy.prototype.updateStateSprite.call(this);
         }
+    };
+
+    Sprite_EnemyImgAct.prototype.updateCustom = function() {
+        //
+    };
+
+    Sprite_EnemyImgAct.prototype.startBossCollapse = function() {
+        this.bitmap = this._mainSprite.bitmap;
+        Sprite_Enemy.prototype.startBossCollapse.call(this);
+        this.bitmap = null;
+        this._effectDuration = this._mainSprite.height;
+    };
+
+    Sprite_EnemyImgAct.prototype.saveCollapsePos = function(width, height) {
+        this._saveCollapseW = this.bitmap._image.width;
+        this._saveCollapseH = this.bitmap._image.height;
+        this.bitmap._image.width = width;
+        this.bitmap._image.height = height;            
+    };
+
+    Sprite_EnemyImgAct.prototype.resumeCollapsePos = function() {
+        this.bitmap._image.width = this._saveCollapseW;
+        this.bitmap._image.height = this._saveCollapseH;
     };
 
     //-----------------------------------------------------------------------------
