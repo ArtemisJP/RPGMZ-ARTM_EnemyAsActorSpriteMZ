@@ -12,6 +12,7 @@
 // 1.2.1 TorigoyaMZ_EnemyHpBar競合対応(パッチ)、リファクタリング実施
 // 1.2.2 リファクタリング実施
 // 1.2.3 ボス消滅タイプ指定時の動作不備を解消
+// 1.2.4 フロントビュー時の本プラグイン使用不可対応
 // =================================================================
 /*:ja
  * @target MZ
@@ -63,6 +64,17 @@
             return result;
         }
     }
+
+    //-----------------------------------------------------------------------------
+    // DataManager
+    //
+    const _DataManager_checkError = DataManager.checkError;
+    DataManager.checkError = function() {
+        _DataManager_checkError.call(this);
+        if ($gameSystem && !$gameSystem.isSideView()) {
+            throw new Error("ARTM_EnemyAsActorSpriteMZ is only available from Side-View");
+        }
+    };
 
     //-----------------------------------------------------------------------------
     // BattleManager
